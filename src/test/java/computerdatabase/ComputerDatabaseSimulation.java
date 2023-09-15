@@ -1,5 +1,6 @@
 package computerdatabase;
 
+import static computerdatabase.ComputerDatabaseSimulation.AppInsights.telemetryClient;
 import static io.gatling.javaapi.core.CoreDsl.*;
 import static io.gatling.javaapi.http.HttpDsl.*;
 
@@ -7,6 +8,9 @@ import io.gatling.javaapi.core.*;
 import io.gatling.javaapi.http.*;
 
 import java.util.concurrent.ThreadLocalRandom;
+
+import com.microsoft.applicationinsights.TelemetryClient;
+
 
 /**
  * This sample is based on our official tutorials:
@@ -35,7 +39,11 @@ public class ComputerDatabaseSimulation extends Simulation {
                 http("Select")
                     .get("#{computerUrl}")
                     .check(status().is(200))
-            )
+
+            ).exec(session -> {
+                    telemetryClient.trackEvent("MyEvent");
+                    return session;
+                })
             .pause(1);
 
     // repeat is a loop resolved at RUNTIME
@@ -90,8 +98,17 @@ public class ComputerDatabaseSimulation extends Simulation {
                 "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:16.0) Gecko/20100101 Firefox/16.0"
             );
 
+    //AppInsights.telemetryClient.trackEvent("MyEvent");
+
     ScenarioBuilder users = scenario("Users").exec(search, browse);
     ScenarioBuilder admins = scenario("Admins").exec(search, browse, edit);
+
+    public class AppInsights {
+         static TelemetryClient telemetryClient = new TelemetryClient();
+         {
+            telemetryClient.getContext().setInstrumentationKey("00779dc0-3c1b-49cd-af4d-d395926eef72");
+        }
+    }
 
     {
         setUp(
